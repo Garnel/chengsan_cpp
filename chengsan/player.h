@@ -15,14 +15,8 @@
 
 class Player {
 public:
-    Player(bool first)
-    :first(first), ai(false) {
-        tag = first ? 1 : 2;
-        opponentTag = first ? 2 : 1;
-    }
-
-    bool IsFirst() const {
-        return first;
+    Player(int selfTag, int oTag)
+    :tag(selfTag), opponentTag(oTag), ai(false) {
     }
 
     bool IsAI() const {
@@ -36,12 +30,16 @@ public:
     int Tag() const {
         return tag;
     }
+    
+    int OpponentTag() const {
+        return opponentTag;
+    }
 
     Step Random(const Board& board, int round) {
         if (round < 9) {
             // place
             auto positions = board.FindEmpty();
-            auto pos = Utils::random<size_t>(0, positions.size() - 1);
+            auto pos = Utils::random<size_t>(positions);
             if (board.CanMakeSan(tag, pos)) {
                 // random eat a piece
                 auto eatPositions = board.FindToEat(opponentTag);
@@ -53,7 +51,7 @@ public:
         } else {
             // move
             auto steps = board.FindMoveSteps(tag);
-            auto chosen = steps[Utils::random<size_t>(0, steps.size() - 1)];
+            auto chosen = Utils::random<Step>(steps);
             if (board.CanMakeSan(tag, chosen.moveTo, chosen.moveFrom)) {
                 // random eat a piece
                 auto eatPositions = board.FindToEat(opponentTag);
@@ -64,7 +62,6 @@ public:
     }
 
 private:
-    bool first;
     bool ai;
     int tag;
     int opponentTag;

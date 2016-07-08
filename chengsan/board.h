@@ -84,9 +84,13 @@ public:
     }};
 
     unordered_map<size_t, vector<array<size_t, 3>>> luPosSan;
+    
+    static const int EMPTY_TAG = 0,     // Mark the empty positions
+                     FIRST_TAG = 1,     // Mark the 1st player's pieces' positions
+                     SECOND_TAG = 2,    // Mark the 2nd player's pieces' positions
+                     BLOCK_TAG = 3;     // Mark the blocked positions
 
-    Board() {
-        board.fill(0);
+    Board(): board({EMPTY_TAG}){
         unordered_map<size_t, unordered_set<size_t>> reverseSanPos;
         for (size_t i = 0; i < sans.size(); ++i) {
             reverseSanPos[sans[i][0]].insert(i);
@@ -106,51 +110,53 @@ public:
     }
 
     vector<size_t> FindEmpty() const {
-        return FindPos(0);
+        return FindPos(EMPTY_TAG);
     }
 
     vector<size_t> FindFirst() const {
-        return FindPos(1);
+        return FindPos(FIRST_TAG);
     }
 
     vector<size_t> FindSecond() const {
-        return FindPos(2);
+        return FindPos(SECOND_TAG);
     }
 
-    vector<Step> FindMoveSteps(int player) const {
+    vector<Step> FindMoveSteps(int playerTag) const {
         vector<Step> res;
-        for (size_t from: FindPos(player)) {
+        for (size_t from: FindPos(playerTag)) {
             for (auto to: nexts.at(from)) {
                 if (!EmptyAt(to)) {
                     continue;
                 }
-                res.push_back(Step::MakeMoveStep(player, from, to));
+                res.push_back(Step::MakeMoveStep(playerTag, from, to));
             }
         }
         return res;
     }
 
     bool EmptyAt(size_t pos) const {
-        return board[pos] == 0;
+        return board[pos] == EMPTY_TAG;
     }
 
     bool BlockedAt(size_t pos) const {
-        return board[pos] == 4;
+        return board[pos] == BLOCK_TAG;
     }
 
     void ClearBlock() {
         for (size_t i = 0; i < 24; ++i) {
-            if (board[i] == 4) {
-                board[i] = 0;
+            if (board[i] == BLOCK_TAG) {
+                board[i] = EMPTY_TAG;
             }
         }
     }
 
-    vector<size_t> FindFreePiece(int player) const {
+    vector<size_t> FindFreePiece(int playerTag) const {
         vector<size_t> res;
-        auto positions = FindPos(player);
-        copy_if(positions.begin(), positions.end(), res.begin(), [&](size_t pos) {
-            return IsFreePiece(player, pos);
+        auto positions = FindPos(playerTag);
+        for_each(positions.begin(), positions.end(), [&](size_t pos) {
+            if (IsFreePiece(playerTag, pos)) {
+                res.push_back(pos);
+            }
         });
         return res;
     }
@@ -172,10 +178,10 @@ public:
         return res;
     }
 
-    bool CanMakeSan(int player, size_t pos, size_t from = 24) const {
+    bool CanMakeSan(int player, size_t pos, size_t from = Step::NONE_POS) const {
         for (auto san: luPosSan.at(pos)) {
             if (all_of(san.begin(), san.end(), [=](size_t curPos) {
-                if (from != 24 && curPos == from) {
+                if (from != Step::NONE_POS && curPos == from) {
                     return false;
                 }
                 return curPos == pos || board[curPos] == player;
@@ -191,15 +197,15 @@ public:
         switch (step.type) {
             case Step::PLACE:
                 board[step.placePos] = step.playerTag;
-                if (step.eatPos != -1) {
-                    board[step.eatPos] = 4;
+                if (step.eatPos != Step::NONE_POS) {
+                    board[step.eatPos] = BLOCK_TAG;
                 }
                 break;
             case Step::MOVE:
                 board[step.moveTo] = board[step.moveFrom];
-                board[step.moveFrom] = 0;
-                if (step.eatPos != -1) {
-                    board[step.eatPos] = 0;
+                board[step.moveFrom] = EMPTY_TAG;
+                if (step.eatPos != Step::NONE_POS) {
+                    board[step.eatPos] = EMPTY_TAG;
                 }
             default:
                 break;
@@ -207,22 +213,25 @@ public:
     }
 
     bool IsOver(int& winner, int round) const {
+        // skip the first round
         if (round == 0) {
             return false;
         }
         
-        if ((round > 9 && FindFirst().size() <= 2) || FindMoveSteps(1).empty()) {
-            winner = 2;
+        if ((round > 9 && FindFirst().size() <= 2) || FindMoveSteps(FIRST_TAG).empty()) {
+            winner = SECOND_TAG;
             return true;
         }
 
-        if ((round > 9 && FindSecond().size() <= 2) || FindMoveSteps(2).empty()) {
-            winner = 1;
+        if ((round > 9 && FindSecond().size() <= 2) || FindMoveSteps(SECOND_TAG).empty()) {
+            winner = FIRST_TAG;
             return true;
         }
 
         return false;
     }
+    
+    
 
 private:
     vector<size_t> FindPos(int status) const {

@@ -14,6 +14,8 @@ public:
     enum{PLACE, MOVE} type;
     size_t eatPos;
     int playerTag;
+    
+    static const size_t NONE_POS = 822;
 
     union {
         struct {
@@ -22,11 +24,11 @@ public:
         size_t placePos;
     };
 
-    static Step MakePlaceStep(int player, size_t placePos, size_t eatPos = -1) {
+    static Step MakePlaceStep(int player, size_t placePos, size_t eatPos = NONE_POS) {
         return Step(player, placePos, eatPos);
     }
 
-    static Step MakeMoveStep(int player, size_t moveFrom, size_t moveTo, size_t eatPos = -1) {
+    static Step MakeMoveStep(int player, size_t moveFrom, size_t moveTo, size_t eatPos = NONE_POS) {
         return Step(player, moveFrom, moveTo, eatPos);
     }
 

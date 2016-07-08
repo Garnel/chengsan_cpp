@@ -11,14 +11,13 @@
 
 #include "board.h"
 #include "player.h"
-#include <cstdlib>
 #include <cstdio>
-#include <string>
 
 class Game {
 public:
     Game()
-    :first(true), second(false), round(0) {
+    :first(Board::FIRST_TAG, Board::SECOND_TAG),
+    second(Board::SECOND_TAG, Board::FIRST_TAG), round(0) {
     }
 
     void Run() {
@@ -38,14 +37,14 @@ public:
             }
 
             round++;
-            cin >> test;
+            cin.get();
         }
 
         cout << "Winner: Player " << winner << endl;
     }
 
     void PrintBoard() const {
-        printf("\n\
+        printf("\nRound: %d\n\
 %d-----------%d-----------%d\n\
 |           |           |\n\
 |   %d-------%d-------%d   |\n\
@@ -60,6 +59,7 @@ public:
 |           |           |\n\
 %d-----------%d-----------%d\n\
 \n",
+                round,
                 board.At(0),
                 board.At(1),
                 board.At(2),
@@ -84,6 +84,7 @@ public:
                 board.At(6),
                 board.At(5),
                 board.At(4));
+        printf("1st: %ld on board | 2nd: %ld on board\n", board.FindFirst().size(), board.FindSecond().size());
     }
 private:
     Board board;

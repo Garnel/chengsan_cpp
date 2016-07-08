@@ -9,6 +9,8 @@
 #ifndef utils_h
 #define utils_h
 
+#include <vector>
+
 using namespace std;
 
 struct Utils {
@@ -18,6 +20,11 @@ struct Utils {
         default_random_engine e1(r());
         uniform_int_distribution<T> uniformDist(low, high);
         return uniformDist(e1);
+    }
+    
+    template<typename T>
+    static T random(const vector<T>& vec) {
+        return vec[random<size_t>(0, vec.size() - 1)];
     }
 };
 
