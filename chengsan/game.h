@@ -24,13 +24,13 @@ public:
         int winner;
         string test;
         while (true) {
-            board.ApplyStep(first.Random(board, round));
+            board.ApplyStep(first.MonteCarlo(board, round, second, true), round);
             PrintBoard();
             if (board.IsOver(winner, round)) {
                 break;
             }
 
-            board.ApplyStep(second.Random(board, round));
+            board.ApplyStep(second.MonteCarlo(board, round, first, false), round);
             PrintBoard();
             if (board.IsOver(winner, round)) {
                 break;

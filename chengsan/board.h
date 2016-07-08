@@ -37,53 +37,10 @@ using namespace std;
  */
 class Board {
 public:
-    const unordered_map<size_t, vector<size_t>> nexts = {
-        {0, {1, 7}},
-        {1, {0, 2, 9}},
-        {2, {1, 3}},
-        {3, {2, 4, 11}},
-        {4, {3, 5}},
-        {5, {4, 6, 13}},
-        {6, {5, 7}},
-        {7, {0, 6, 15}},
-        {8, {9, 15}},
-        {9, {1, 8, 10, 17}},
-        {10, {9, 11}},
-        {11, {3, 10, 12, 19}},
-        {12, {11, 13}},
-        {13, {5, 12, 14, 21}},
-        {14, {13, 15}},
-        {15, {7, 8, 14, 23}},
-        {16, {17, 23}},
-        {17, {9, 16, 18}},
-        {18, {17, 19}},
-        {19, {11, 18, 20}},
-        {20, {19, 21}},
-        {21, {13, 20, 22}},
-        {22, {21, 23}},
-        {23, {15, 16, 22}},
-    };
+    static const unordered_map<size_t, vector<size_t>> nexts;
+    static const array<array<size_t, 3>, 16> sans;
 
-    const array<array<size_t, 3>, 16> sans = {{
-        {0, 1, 2},
-        {2, 3, 4},
-        {4, 5, 6},
-        {6, 7, 0},
-        {8, 9, 10},
-        {10, 11, 12},
-        {12, 13, 14},
-        {14, 15, 8},
-        {16, 17, 18},
-        {18, 19, 20},
-        {20, 21, 22},
-        {22, 23, 16},
-        {1, 9, 17},
-        {3, 11, 19},
-        {5, 13, 21},
-        {7, 15, 23}
-    }};
-
-    unordered_map<size_t, vector<array<size_t, 3>>> luPosSan;
+    static const unordered_map<size_t, vector<array<size_t, 3>>> luPosSan;
     
     static const int EMPTY_TAG = 0,     // Mark the empty positions
                      FIRST_TAG = 1,     // Mark the 1st player's pieces' positions
@@ -91,18 +48,6 @@ public:
                      BLOCK_TAG = 3;     // Mark the blocked positions
 
     Board(): board({EMPTY_TAG}){
-        unordered_map<size_t, unordered_set<size_t>> reverseSanPos;
-        for (size_t i = 0; i < sans.size(); ++i) {
-            reverseSanPos[sans[i][0]].insert(i);
-            reverseSanPos[sans[i][1]].insert(i);
-            reverseSanPos[sans[i][2]].insert(i);
-        }
-
-        for (auto pair: reverseSanPos) {
-            for (auto pos: pair.second) {
-                luPosSan[pair.first].push_back(sans[pos]);
-            }
-        }
     }
 
     int At(size_t pos) const {
@@ -119,6 +64,10 @@ public:
 
     vector<size_t> FindSecond() const {
         return FindPos(SECOND_TAG);
+    }
+    
+    vector<size_t> FindPiecesPos(int playerTag) const {
+        return FindPos(playerTag);
     }
 
     vector<Step> FindMoveSteps(int playerTag) const {
@@ -193,7 +142,10 @@ public:
         return false;
     }
 
-    void ApplyStep(const Step& step) {
+    void ApplyStep(const Step& step, int round) {
+        if (round == 9) {
+            ClearBlock();
+        }
         switch (step.type) {
             case Step::PLACE:
                 board[step.placePos] = step.playerTag;
@@ -245,6 +197,79 @@ private:
     }
 
     array<int, 24> board;
+};
+
+const unordered_map<size_t, vector<size_t>> Board::nexts = {
+    {0, {1, 7}},
+    {1, {0, 2, 9}},
+    {2, {1, 3}},
+    {3, {2, 4, 11}},
+    {4, {3, 5}},
+    {5, {4, 6, 13}},
+    {6, {5, 7}},
+    {7, {0, 6, 15}},
+    {8, {9, 15}},
+    {9, {1, 8, 10, 17}},
+    {10, {9, 11}},
+    {11, {3, 10, 12, 19}},
+    {12, {11, 13}},
+    {13, {5, 12, 14, 21}},
+    {14, {13, 15}},
+    {15, {7, 8, 14, 23}},
+    {16, {17, 23}},
+    {17, {9, 16, 18}},
+    {18, {17, 19}},
+    {19, {11, 18, 20}},
+    {20, {19, 21}},
+    {21, {13, 20, 22}},
+    {22, {21, 23}},
+    {23, {15, 16, 22}},
+};
+
+const array<array<size_t, 3>, 16> Board::sans = {{
+    {0, 1, 2},
+    {2, 3, 4},
+    {4, 5, 6},
+    {6, 7, 0},
+    {8, 9, 10},
+    {10, 11, 12},
+    {12, 13, 14},
+    {14, 15, 8},
+    {16, 17, 18},
+    {18, 19, 20},
+    {20, 21, 22},
+    {22, 23, 16},
+    {1, 9, 17},
+    {3, 11, 19},
+    {5, 13, 21},
+    {7, 15, 23}
+}};
+
+const unordered_map<size_t, vector<array<size_t, 3>>> Board::luPosSan = {
+    {0, {{0,1,2}, {6,7,0}}},
+    {1, {{0,1,2}, {1,9,17}}},
+    {2, {{0,1,2}, {2,3,4}}},
+    {3, {{2,3,4}, {3,11,19}}},
+    {4, {{2,3,4}, {4,5,6}}},
+    {5, {{4,5,6}, {5,13,21}}},
+    {6, {{4,5,6}, {6,7,0}}},
+    {7, {{6,7,0}, {7,15,23}}},
+    {8, {{8,9,10}, {14,15,8}}},
+    {9, {{8,9,10}, {1,9,17}}},
+    {10, {{8,9,10}, {10,11,12}}},
+    {11, {{10,11,12}, {3,11,19}}},
+    {12, {{10,11,12}, {12,13,14}}},
+    {13, {{12,13,14}, {5,13,21}}},
+    {14, {{12,13,14}, {14,15,8}}},
+    {15, {{14,15,8}, {7,15,23}}},
+    {16, {{16,17,18}, {22,23,16}}},
+    {17, {{16,17,18}, {1,9,17}}},
+    {18, {{16,17,18}, {18,19,20}}},
+    {19, {{18,19,20}, {3,11,19}}},
+    {20, {{18,19,20}, {20,21,22}}},
+    {21, {{20,21,22}, {5,13,21}}},
+    {22, {{20,21,22}, {22,23,16}}},
+    {23, {{22,23,16}, {7,15,23}}}
 };
 
 #endif /* board_h */
