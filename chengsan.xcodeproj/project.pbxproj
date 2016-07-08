@@ -23,8 +23,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3F0AB88D1D2EA22A0091E99A /* step.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = step.h; sourceTree = "<group>"; };
 		3F44FDEB1D2D5B140035F2EB /* chengsan */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = chengsan; sourceTree = BUILT_PRODUCTS_DIR; };
 		3F44FDEE1D2D5B140035F2EB /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		3F44FDF51D2D5B260035F2EB /* player.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = player.h; sourceTree = "<group>"; };
+		3F44FDF61D2D5BA50035F2EB /* game.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = game.h; sourceTree = "<group>"; };
+		3F44FDF71D2D5CDA0035F2EB /* board.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = board.h; sourceTree = "<group>"; };
+		3F44FDF81D2D71600035F2EB /* utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +63,11 @@
 			isa = PBXGroup;
 			children = (
 				3F44FDEE1D2D5B140035F2EB /* main.cpp */,
+				3F44FDF51D2D5B260035F2EB /* player.h */,
+				3F44FDF61D2D5BA50035F2EB /* game.h */,
+				3F44FDF71D2D5CDA0035F2EB /* board.h */,
+				3F44FDF81D2D71600035F2EB /* utils.h */,
+				3F0AB88D1D2EA22A0091E99A /* step.h */,
 			);
 			path = chengsan;
 			sourceTree = "<group>";
@@ -237,6 +247,7 @@
 				3F44FDF41D2D5B140035F2EB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
