@@ -22,68 +22,69 @@ public:
 
     void Run() {
         int winner;
-        string test;
         while (true) {
             board.ApplyStep(first.MonteCarlo(board, round, second, true), round);
             PrintBoard();
             if (board.IsOver(winner, round)) {
                 break;
             }
-
+            
             board.ApplyStep(second.MonteCarlo(board, round, first, false), round);
+//            board.ApplyStep(second.Human(board, round), round);
             PrintBoard();
             if (board.IsOver(winner, round)) {
                 break;
             }
 
             round++;
-            cin.get();
+//            cin.get();
         }
 
         cout << "Winner: Player " << winner << endl;
     }
 
     void PrintBoard() const {
+        array<char, 4> tags({'.', '1', '2', '*'});
         printf("\nRound: %d\n\
-%d-----------%d-----------%d\n\
+%c-----------%c-----------%c\n\
 |           |           |\n\
-|   %d-------%d-------%d   |\n\
+|   %c-------%c-------%c   |\n\
 |   |       |       |   |\n\
-|   |   %d---%d---%d   |   |\n\
+|   |   %c---%c---%c   |   |\n\
 |   |   |       |   |   |\n\
-%d---%d---%d       %d---%d---%d\n\
+%c---%c---%c       %c---%c---%c\n\
 |   |   |       |   |   |\n\
-|   |   %d---%d---%d   |   |\n\
+|   |   %c---%c---%c   |   |\n\
 |   |       |       |   |\n\
-|   %d-------%d-------%d   |\n\
+|   %c-------%c-------%c   |\n\
 |           |           |\n\
-%d-----------%d-----------%d\n\
+%c-----------%c-----------%c\n\
 \n",
                 round,
-                board.At(0),
-                board.At(1),
-                board.At(2),
-                board.At(8),
-                board.At(9),
-                board.At(10),
-                board.At(16),
-                board.At(17),
-                board.At(18),
-                board.At(7),
-                board.At(15),
-                board.At(23),
-                board.At(19),
-                board.At(11),
-                board.At(3),
-                board.At(22),
-                board.At(21),
-                board.At(20),
-                board.At(14),
-                board.At(13),
-                board.At(12),
-                board.At(6),
-                board.At(5),
-                board.At(4));
+                tags[board.At(0)],
+                tags[board.At(1)],
+                tags[board.At(2)],
+                tags[board.At(8)],
+                tags[board.At(9)],
+                tags[board.At(10)],
+                tags[board.At(16)],
+                tags[board.At(17)],
+                tags[board.At(18)],
+                tags[board.At(7)],
+                tags[board.At(15)],
+                tags[board.At(23)],
+                tags[board.At(19)],
+                tags[board.At(11)],
+                tags[board.At(3)],
+                tags[board.At(22)],
+                tags[board.At(21)],
+                tags[board.At(20)],
+                tags[board.At(14)],
+                tags[board.At(13)],
+                tags[board.At(12)],
+                tags[board.At(6)],
+                tags[board.At(5)],
+                tags[board.At(4)]);
         printf("1st: %ld on board | 2nd: %ld on board\n", board.FindFirst().size(), board.FindSecond().size());
     }
 private:

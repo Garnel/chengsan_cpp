@@ -40,39 +40,56 @@ public:
     static const unordered_map<size_t, vector<size_t>> nexts;
     static const array<array<size_t, 3>, 16> sans;
 
-    static const unordered_map<size_t, vector<array<size_t, 3>>> luPosSan;
+    static const unordered_map<size_t, array<array<size_t, 3>, 2>> luPosSan;
     
     static const int EMPTY_TAG = 0,     // Mark the empty positions
                      FIRST_TAG = 1,     // Mark the 1st player's pieces' positions
                      SECOND_TAG = 2,    // Mark the 2nd player's pieces' positions
                      BLOCK_TAG = 3;     // Mark the blocked positions
 
-    Board(): board({EMPTY_TAG}){
+    Board()
+    : board({EMPTY_TAG}), emptyPos({0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23}) {
     }
 
-    int At(size_t pos) const {
-        return board[pos];
+    const unordered_set<size_t>& FindEmpty() const {
+        return emptyPos;
     }
 
-    vector<size_t> FindEmpty() const {
-        return FindPos(EMPTY_TAG);
+    const unordered_set<size_t>& FindFirst() const {
+        return firstPos;
     }
 
-    vector<size_t> FindFirst() const {
-        return FindPos(FIRST_TAG);
-    }
-
-    vector<size_t> FindSecond() const {
-        return FindPos(SECOND_TAG);
+    const unordered_set<size_t>& FindSecond() const {
+        return secondPos;
     }
     
-    vector<size_t> FindPiecesPos(int playerTag) const {
-        return FindPos(playerTag);
+    const unordered_set<size_t>& FindPlayer(int playerTag) const {
+        return playerTag == 1 ? FindFirst() : FindSecond();
+    }
+    
+    int PieceNumber(int playerTag) {
+        switch (playerTag) {
+            case FIRST_TAG:
+                return FirstPieceNumber();
+                break;
+            case SECOND_TAG:
+                return SecondPieceNumber();
+            default:
+                return 0;
+        }
+    }
+    
+    int FirstPieceNumber() const {
+        return (int)firstPos.size();
+    }
+    
+    int SecondPieceNumber() const {
+        return (int)secondPos.size();
     }
 
     vector<Step> FindMoveSteps(int playerTag) const {
         vector<Step> res;
-        for (size_t from: FindPos(playerTag)) {
+        for (size_t from: FindPlayer(playerTag)) {
             for (auto to: nexts.at(from)) {
                 if (!EmptyAt(to)) {
                     continue;
@@ -82,29 +99,103 @@ public:
         }
         return res;
     }
-
+    
+    bool HasMovableSteps(int playerTag) const {
+        for (size_t from: FindPlayer(playerTag)) {
+            for (auto to: nexts.at(from)) {
+                if (EmptyAt(to)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    int At(size_t pos) const {
+        return board[pos];
+    }
+    
     bool EmptyAt(size_t pos) const {
         return board[pos] == EMPTY_TAG;
+    }
+    
+    void SetEmpty(size_t pos) {
+        if (FirstAt(pos)) {
+            firstPos.erase(pos);
+        } else if (SecondAt(pos)) {
+            secondPos.erase(pos);
+        } else if (BlockedAt(pos)) {
+            blockPos.erase(pos);
+        }
+        board[pos] = EMPTY_TAG;
+        emptyPos.insert(pos);
+    }
+
+    bool FirstAt(size_t pos) const {
+        return board[pos] == FIRST_TAG;
+    }
+    
+    void SetFirst(size_t pos) {
+        board[pos] = FIRST_TAG;
+        firstPos.insert(pos);
+        emptyPos.erase(pos);
+    }
+
+    bool SecondAt(size_t pos) const {
+        return board[pos] == SECOND_TAG;
+    }
+    
+    void SetSecond(size_t pos) {
+        board[pos] = SECOND_TAG;
+        secondPos.insert(pos);
+        emptyPos.erase(pos);
     }
 
     bool BlockedAt(size_t pos) const {
         return board[pos] == BLOCK_TAG;
     }
-
-    void ClearBlock() {
+    
+    void SetBlock(size_t pos) {
+        if (FirstAt(pos)) {
+            firstPos.erase(pos);
+        } else if (SecondAt(pos)) {
+            secondPos.erase(pos);
+        }
+        board[pos] = BLOCK_TAG;
+        blockPos.insert(pos);
+    }
+    
+    void ClearBlock(size_t pos) {
+        SetEmpty(pos);
+    }
+    
+    void ClearBlocks() {
         for (size_t i = 0; i < 24; ++i) {
             if (board[i] == BLOCK_TAG) {
-                board[i] = EMPTY_TAG;
+                ClearBlock(i);
             }
         }
     }
+    
+    void Move(size_t from, size_t to) {
+        if (EmptyAt(from) || !EmptyAt(to)) {
+            return;
+        }
+        
+        if (At(from) == FIRST_TAG) {
+            SetFirst(to);
+        } else if (At(from) == SECOND_TAG) {
+            SetSecond(to);
+        }
+        SetEmpty(from);
+    }
 
-    vector<size_t> FindFreePiece(int playerTag) const {
-        vector<size_t> res;
-        auto positions = FindPos(playerTag);
+    unordered_set<size_t> FindFreePiece(int playerTag) const {
+        unordered_set<size_t> res;
+        auto positions = FindPlayer(playerTag);
         for_each(positions.begin(), positions.end(), [&](size_t pos) {
             if (IsFreePiece(playerTag, pos)) {
-                res.push_back(pos);
+                res.insert(pos);
             }
         });
         return res;
@@ -119,10 +210,10 @@ public:
         });
     }
 
-    vector<size_t> FindToEat(int player) const {
+    unordered_set<size_t> FindToEat(int player) const {
         auto res = FindFreePiece(player);
         if (res.empty()) {
-            return FindPos(player);
+            return FindPlayer(player);
         }
         return res;
     }
@@ -144,20 +235,25 @@ public:
 
     void ApplyStep(const Step& step, int round) {
         if (round == 9) {
-            ClearBlock();
+            ClearBlocks();
         }
+        
         switch (step.type) {
             case Step::PLACE:
-                board[step.placePos] = step.playerTag;
+                if (step.playerTag == FIRST_TAG) {
+                    SetFirst(step.placePos);
+                } else if (step.playerTag == SECOND_TAG) {
+                    SetSecond(step.placePos);
+                }
+                
                 if (step.eatPos != Step::NONE_POS) {
-                    board[step.eatPos] = BLOCK_TAG;
+                    SetBlock(step.eatPos);
                 }
                 break;
             case Step::MOVE:
-                board[step.moveTo] = board[step.moveFrom];
-                board[step.moveFrom] = EMPTY_TAG;
+                Move(step.moveFrom, step.moveTo);
                 if (step.eatPos != Step::NONE_POS) {
-                    board[step.eatPos] = EMPTY_TAG;
+                    SetEmpty(step.eatPos);
                 }
             default:
                 break;
@@ -170,33 +266,21 @@ public:
             return false;
         }
         
-        if ((round > 9 && FindFirst().size() <= 2) || FindMoveSteps(FIRST_TAG).empty()) {
+        if ((round > 9 && FindFirst().size() <= 2) || !HasMovableSteps(FIRST_TAG)) {
             winner = SECOND_TAG;
             return true;
         }
 
-        if ((round > 9 && FindSecond().size() <= 2) || FindMoveSteps(SECOND_TAG).empty()) {
+        if ((round > 9 && FindSecond().size() <= 2) || !HasMovableSteps(SECOND_TAG)) {
             winner = FIRST_TAG;
             return true;
         }
 
         return false;
     }
-    
-    
-
 private:
-    vector<size_t> FindPos(int status) const {
-        vector<size_t> pos;
-        for (size_t i = 0; i < 24; ++i) {
-            if (board[i] == status) {
-                pos.push_back(i);
-            }
-        }
-        return pos;
-    }
-
     array<int, 24> board;
+    unordered_set<size_t> emptyPos, firstPos, secondPos, blockPos;
 };
 
 const unordered_map<size_t, vector<size_t>> Board::nexts = {
@@ -245,31 +329,31 @@ const array<array<size_t, 3>, 16> Board::sans = {{
     {7, 15, 23}
 }};
 
-const unordered_map<size_t, vector<array<size_t, 3>>> Board::luPosSan = {
-    {0, {{0,1,2}, {6,7,0}}},
-    {1, {{0,1,2}, {1,9,17}}},
-    {2, {{0,1,2}, {2,3,4}}},
-    {3, {{2,3,4}, {3,11,19}}},
-    {4, {{2,3,4}, {4,5,6}}},
-    {5, {{4,5,6}, {5,13,21}}},
-    {6, {{4,5,6}, {6,7,0}}},
-    {7, {{6,7,0}, {7,15,23}}},
-    {8, {{8,9,10}, {14,15,8}}},
-    {9, {{8,9,10}, {1,9,17}}},
-    {10, {{8,9,10}, {10,11,12}}},
-    {11, {{10,11,12}, {3,11,19}}},
-    {12, {{10,11,12}, {12,13,14}}},
-    {13, {{12,13,14}, {5,13,21}}},
-    {14, {{12,13,14}, {14,15,8}}},
-    {15, {{14,15,8}, {7,15,23}}},
-    {16, {{16,17,18}, {22,23,16}}},
-    {17, {{16,17,18}, {1,9,17}}},
-    {18, {{16,17,18}, {18,19,20}}},
-    {19, {{18,19,20}, {3,11,19}}},
-    {20, {{18,19,20}, {20,21,22}}},
-    {21, {{20,21,22}, {5,13,21}}},
-    {22, {{20,21,22}, {22,23,16}}},
-    {23, {{22,23,16}, {7,15,23}}}
+const unordered_map<size_t, array<array<size_t, 3>, 2>> Board::luPosSan = {
+    {0,  {{0,1,2,      6,7,0}}},
+    {1,  {{0,1,2,      1,9,17}}},
+    {2,  {{0,1,2,      2,3,4}}},
+    {3,  {{2,3,4,      3,11,19}}},
+    {4,  {{2,3,4,      4,5,6}}},
+    {5,  {{4,5,6,      5,13,21}}},
+    {6,  {{4,5,6,      6,7,0}}},
+    {7,  {{6,7,0,      7,15,23}}},
+    {8,  {{8,9,10,     14,15,8}}},
+    {9,  {{8,9,10,     1,9,17}}},
+    {10, {{8,9,10,     10,11,12}}},
+    {11, {{10,11,12,   3,11,19}}},
+    {12, {{10,11,12,   12,13,14}}},
+    {13, {{12,13,14,   5,13,21}}},
+    {14, {{12,13,14,   14,15,8}}},
+    {15, {{14,15,8,    7,15,23}}},
+    {16, {{16,17,18,   22,23,16}}},
+    {17, {{16,17,18,   1,9,17}}},
+    {18, {{16,17,18,   18,19,20}}},
+    {19, {{18,19,20,   3,11,19}}},
+    {20, {{18,19,20,   20,21,22}}},
+    {21, {{20,21,22,   5,13,21}}},
+    {22, {{20,21,22,   22,23,16}}},
+    {23, {{22,23,16,   7,15,23}}}
 };
 
 #endif /* board_h */

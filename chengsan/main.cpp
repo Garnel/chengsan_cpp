@@ -6,7 +6,6 @@
 //  Copyright © 2016 maogm12@gmail.com. All rights reserved.
 //
 
-#include <iostream>
 #include "game.h"
 
 int main(int argc, const char * argv[]) {

@@ -9,7 +9,9 @@
 #ifndef player_h
 #define player_h
 
-#include <random>
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
 #include "utils.h"
 #include "step.h"
 
@@ -17,6 +19,7 @@ class Player {
 public:
     Player(int selfTag, int oTag)
     :tag(selfTag), opponentTag(oTag), ai(false) {
+        srand((unsigned)time(NULL));
     }
 
     bool IsAI() const {
@@ -39,18 +42,18 @@ public:
         if (round < 9) {
             // place
             auto positions = board.FindEmpty();
-            auto pos = Utils::random<size_t>(positions);
+            auto pos = Utils::random(positions);
             if (board.CanMakeSan(tag, pos)) {
                 // random eat a piece
                 auto eatPositions = board.FindToEat(opponentTag);
-                return Step::MakePlaceStep(tag, pos, Utils::random<size_t>(eatPositions));
+                return Step::MakePlaceStep(tag, pos, Utils::random(eatPositions));
             } else {
                 return Step::MakePlaceStep(tag, pos);
             }
         } else {
             // move
             auto steps = board.FindMoveSteps(tag);
-            auto chosen = Utils::random<Step>(steps);
+            auto chosen = Utils::random(steps);
             if (board.CanMakeSan(tag, chosen.moveTo, chosen.moveFrom)) {
                 // random eat a piece
                 auto eatPositions = board.FindToEat(opponentTag);
@@ -102,31 +105,37 @@ public:
             }
             if (!isFirst) fakeRound++;
             
-            bool over = false;
-            for (int j = 0; j < 100000; ++j) {
-                fakeBoard.ApplyStep(oppenent.Random(fakeBoard, fakeRound), fakeRound);
-                if (fakeBoard.IsOver(winner, fakeRound)) {
-                    if (winner == tag) {
+            Board backupBoard = fakeBoard;
+            int backupRound = fakeRound;
+            for (int k = 0; k < 100; ++k) {
+                bool over = false;
+                for (int j = 0; j < 100; ++j) {
+                    fakeBoard.ApplyStep(oppenent.Random(fakeBoard, fakeRound), fakeRound);
+                    if (fakeBoard.IsOver(winner, fakeRound)) {
+                        if (winner == tag) {
+                            score[i]++;
+                        }
+                        over = true;
+                        break;
+                    }
+                    
+                    if (isFirst) fakeRound++;
+                    fakeBoard.ApplyStep(Random(fakeBoard, fakeRound), fakeRound);
+                    if (fakeBoard.IsOver(winner, fakeRound)) {
+                        if (winner == tag) {
+                            score[i]++;
+                        }
+                        over = true;
+                        break;
+                    }
+                }
+                if (!over) {
+                    if (fakeBoard.PieceNumber(tag) > fakeBoard.PieceNumber(opponentTag)) {
                         score[i]++;
                     }
-                    over = true;
-                    break;
                 }
-                
-                if (isFirst) fakeRound++;
-                fakeBoard.ApplyStep(Random(fakeBoard, fakeRound), fakeRound);
-                if (fakeBoard.IsOver(winner, fakeRound)) {
-                    if (winner == tag) {
-                        score[i]++;
-                    }
-                    over = true;
-                    break;
-                }
-            }
-            if (!over) {
-                if (fakeBoard.FindPiecesPos(tag).size() > fakeBoard.FindPiecesPos(opponentTag).size()) {
-                    score[i]++;
-                }
+                fakeBoard = backupBoard;
+                fakeRound = backupRound;
             }
         }
         
@@ -139,6 +148,66 @@ public:
         }
         return possibleSteps[maxPos];
     }
+    
+    Step Human(const Board& board, int round) const {
+        if (round < 9) {
+            int circle, pos, boardPos;
+            while (true) {
+                cout << "Please input circle, pos: ";
+                cin >> circle >> pos;
+                boardPos = circle * 8 + pos;
+                if (board.EmptyAt(boardPos)) {
+                    break;
+                }
+            }
+
+            auto step = Step::MakePlaceStep(tag, boardPos);
+            if (board.CanMakeSan(tag, boardPos)) {
+                while (true) {
+                    cout << "Please input circle, pos of which piece you want to eat: ";
+                    cin >> circle >> pos;
+                    boardPos = circle * 8 + pos;
+                    if (board.At(boardPos) == opponentTag) {
+                        step.eatPos = boardPos;
+                        break;
+                    }
+                }
+            }
+            return step;
+        }
+        
+        int circle, pos, fromPos, toPos;
+        while (true) {
+            cout << "Please input circle, pos of which you want to move: ";
+            cin >> circle >> pos;
+            fromPos = circle * 8 + pos;
+            if (board.At(fromPos) == tag) {
+                break;
+            }
+        }
+        while (true) {
+            cout << "Please input circle, pos of which you want to move to: ";
+            cin >> circle >> pos;
+            toPos = circle * 8 + pos;
+            if (board.EmptyAt(toPos)) {
+                break;
+            }
+        }
+        auto step = Step::MakeMoveStep(tag, fromPos, toPos);
+        if (board.CanMakeSan(tag, toPos, fromPos)) {
+            while (true) {
+                cout << "Please input circle, pos of which piece you want to eat: ";
+                cin >> circle >> pos;
+                int boardPos = circle * 8 + pos;
+                if (board.At(boardPos) == opponentTag) {
+                    step.eatPos = boardPos;
+                    break;
+                }
+            }
+        }
+        return step;
+    }
+    
 private:
     bool ai;
     int tag;
